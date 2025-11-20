@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
 
-// 1. CONEXIÓN A LA BASE DE DATOS
+// 1. Conexión a la base de datos
 try {
     $dbPath = __DIR__ . '/../usuarios.db';
     if (!file_exists($dbPath)) {
@@ -17,14 +17,14 @@ try {
     exit();
 }
 
-// 2. SOLO ACEPTAR PETICIONES POST
+// 2. Aceptar solo peticiones POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(["success" => false, "message" => "Método no permitido"]);
     exit();
 }
 
-// 3. LEER DATOS DE ENTRADA (JSON o FORM)
+// 3. Leer datos de entrada (acepta JSON y form-urlencoded)
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input) {
     $input = $_POST;
@@ -39,8 +39,8 @@ if (!$usuario || !$password) {
     exit();
 }
 
-// 4. CONSULTAR LA BASE DE DATOS
-// ¡ADVERTENCIA! Esto es inseguro para producción. Deberías usar password_hash() y password_verify().
+// 4. Consultar la base de datos
+// ¡ADVERTENCIA! Guardar contraseñas en texto plano es inseguro. Usar password_hash() y password_verify().
 $stmt = $db->prepare('SELECT COUNT(*) as count FROM usuarios WHERE usuario = :u AND password = :p');
 $stmt->bindValue(':u', $usuario, SQLITE3_TEXT);
 $stmt->bindValue(':p', $password, SQLITE3_TEXT);
@@ -49,10 +49,8 @@ $resultado = $stmt->execute();
 $fila = $resultado->fetchArray(SQLITE3_ASSOC);
 
 if ($fila && $fila['count'] > 0) {
-    // Usuario y contraseña correctos
     echo json_encode(["success" => true, "message" => "Login exitoso"]);
 } else {
-    // Credenciales incorrectas
     http_response_code(401); // 401 Unauthorized
     echo json_encode(["success" => false, "message" => "Usuario o contraseña incorrectos."]);
 }

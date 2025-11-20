@@ -12,7 +12,7 @@ try {
     $db = new SQLite3($dbPath);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(["error" => "No se pudo conectar a la BDS"]);
+    echo json_encode(["error" => "No se pudo conectar a la BD"]);
     exit();
 }
 
@@ -27,48 +27,38 @@ $db->exec($queryTabla);
 $metodo = $_SERVER['REQUEST_METHOD'];
 
 if ($metodo === 'POST') {
-    // Intentar leer JSON bruto
-    $raw = trim(file_get_contents('php://input'));
-    $input = null;
-    if ($raw !== '') {
-        $input = json_decode($raw, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $input = null; // JSON inválido -> fallback a $_POST
-        }
-    }
-
-    // Si no llegó JSON, usar $_POST (formularios)
+    // --- CREAR USUARIO ---
+    $input = json_decode(trim(file_get_contents('php://input')), true);
     if (!$input) {
-        $input = $_POST;
+        $input = $_POST; // Fallback para datos de formulario
     }
 
-    // Aceptar tanto "username" como "usuario" como nombre del campo
     $usuario = $input['username'] ?? $input['usuario'] ?? null;
     $password = $input['password'] ?? null;
 
     if (!$usuario || !$password) {
         http_response_code(400);
-        echo json_encode(["error" => "Datos incompletos o en formato incorrecto. Se requieren 'username' (o 'usuario') y 'password'."]);
+        echo json_encode(["error" => "Datos incompletos. Se requieren 'username' y 'password'."]);
         exit();
     }
 
-    // En producción usar password_hash()
+    // ¡ADVERTENCIA! En producción se debe usar password_hash()
     $stmt = $db->prepare('INSERT INTO usuarios (usuario, password) VALUES (:u, :p)');
     $stmt->bindValue(':u', $usuario, SQLITE3_TEXT);
     $stmt->bindValue(':p', $password, SQLITE3_TEXT);
 
     $res = $stmt->execute();
     if ($res !== false) {
-        // devolver id de fila para confirmar que quedó en esta BD
         $last = $db->lastInsertRowID();
         echo json_encode(["mensaje" => "Usuario guardado con éxito", "rowid" => $last, "db" => $dbPath]);
     } else {
         http_response_code(500);
-        echo json_encode(["error" => "Error al guardar"]);
+        echo json_encode(["error" => "Error al guardar el usuario"]);
     }
 
 } elseif ($metodo === 'GET') {
-    // Modo debug: ?debug=1 devuelve ruta de BD y conteo
+    // --- LEER USUARIOS ---
+    // Modo debug: ?debug=1
     if (isset($_GET['debug']) && $_GET['debug']) {
         $count = $db->querySingle('SELECT COUNT(*) FROM usuarios');
         echo json_encode(["db" => $dbPath, "count" => $count]);
@@ -76,17 +66,10 @@ if ($metodo === 'POST') {
     }
 
     $resultados = $db->query('SELECT usuario, password FROM usuarios ORDER BY rowid DESC');
-    if ($resultados === false) {
-        http_response_code(500);
-        echo json_encode(["error" => "Error en la consulta"]);
-        exit();
-    }
-
     $listaUsuarios = [];
     while ($fila = $resultados->fetchArray(SQLITE3_ASSOC)) {
         $listaUsuarios[] = $fila;
     }
-
     echo json_encode($listaUsuarios);
 
 } elseif ($metodo === 'DELETE') {

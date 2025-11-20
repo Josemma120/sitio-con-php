@@ -45,10 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Usar delegación de eventos en la lista para manejar clics en botones de eliminar
     if (listaHTML) {
         listaHTML.addEventListener('click', async (evento) => {
-            // Verificar si el clic fue en un botón de eliminar
             if (evento.target.matches('.btn-eliminar')) {
                 const username = evento.target.dataset.username;
                 if (confirm(`¿Estás seguro de que quieres eliminar a "${username}"?`)) {
@@ -58,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Función para enviar la solicitud de eliminación al servidor
     async function eliminarUsuario(username) {
         try {
             const respuesta = await fetch('src/guardar.php', {
@@ -69,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const json = await respuesta.json();
             if (respuesta.ok) {
-                cargarUsuarios(); // Recargar la lista si la eliminación fue exitosa
+                cargarUsuarios();
             } else {
                 alert(json.error || 'No se pudo eliminar el usuario.');
             }
@@ -79,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Cargar usuarios al inicio
     cargarUsuarios();
 
     async function cargarUsuarios() {
@@ -101,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function mostrarUsuariosEnPantalla(datos, lista) {
         if (!lista) return;
-        lista.innerHTML = ''; // Limpiar lista anterior
+        lista.innerHTML = '';
 
         if (datos.length === 0) {
             lista.innerHTML = '<li>No hay usuarios registrados.</li>';
@@ -116,8 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const btnEliminar = document.createElement('button');
             btnEliminar.textContent = 'Eliminar';
-            btnEliminar.className = 'btn-eliminar'; // Clase para identificar el botón
-            btnEliminar.dataset.username = usuario.usuario; // Guardar el nombre de usuario en el botón
+            btnEliminar.className = 'btn-eliminar';
+            btnEliminar.dataset.username = usuario.usuario;
 
             itemLista.appendChild(nombreUsuario);
             itemLista.appendChild(btnEliminar);
